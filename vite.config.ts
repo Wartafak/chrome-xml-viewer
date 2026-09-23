@@ -12,7 +12,7 @@ export default defineConfig({
         entryFileNames: "content.js",
       },
     },
-    minify: "esbuild",
+    minify: "oxc",
   },
   test: {
     environment: "node",
