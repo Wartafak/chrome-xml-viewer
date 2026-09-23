@@ -6,9 +6,9 @@ const fixture = '<root id="one"><item>hello world</item><item>hello again</item>
 
 async function load(html = "", url = "https://example.com/data.xml", contentType = "text/html") {
   window.history.replaceState(null, "", url);
-  document.open();
-  document.write(html);
-  document.close();
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  document.head.replaceChildren(...Array.from(parsed.head.childNodes, (node) => document.importNode(node, true)));
+  document.body.replaceChildren(...Array.from(parsed.body.childNodes, (node) => document.importNode(node, true)));
   Object.defineProperty(document, "contentType", { configurable: true, value: contentType });
   vi.resetModules();
   await import("../src/content");
