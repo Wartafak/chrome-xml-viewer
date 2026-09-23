@@ -1,9 +1,11 @@
+// @ts-nocheck -- this legacy DOM-heavy entry point is being migrated incrementally.
+import { formatByteSize, hasXmlExtension } from "./xml-utils";
+
 (() => {
   "use strict";
   if (window.top !== window.self) return;
 
   const XHTML_NS = "http://www.w3.org/1999/xhtml";
-  const XML_EXT = /\.(xml|xsl|rss|atom|wsdl|xsd|plist|svg|config|kml|gpx|opml)(\?.*)?$/i;
   const LARGE_BYTES = 1.5 * 1024 * 1024;
   const LARGE_NODES = 15000;
   const MAX_MATCHES = 1000;
@@ -35,20 +37,20 @@
     const ct = (document.contentType || "").toLowerCase().split(";")[0].trim();
     if (ct === "image/svg+xml" || ct === "application/xhtml+xml") return null;
     if (ct.includes("xml") || ct.includes("rss") || ct.includes("atom")) return "declared";
-    if ((ct === "text/plain" || ct === "text/html" || ct === "") && XML_EXT.test(location.href.split("#")[0])) return "declared";
+    if ((ct === "text/plain" || ct === "text/html" || ct === "") && hasXmlExtension(location.href)) return "declared";
     // Server sent XML as text/plain without an .xml extension; the browser wraps it in <body><pre>.
     if (ct === "text/plain" && bodyLooksLikeXml()) return "sniffed";
     return null;
   }
 
-  function hasStylesheetPI(doc) {
+  function hasStylesheetPI(doc: Document) {
     for (const n of doc.childNodes) {
       if (n.nodeType === Node.PROCESSING_INSTRUCTION_NODE && n.target === "xml-stylesheet") return true;
     }
     return false;
   }
 
-  function findParserError(doc) {
+  function findParserError(doc: Document): { node: Element; message: string } | null {
     const pe = doc.getElementsByTagNameNS(XHTML_NS, "parsererror")[0];
     if (!pe) return null;
     const detail = pe.querySelector("div") || pe;
@@ -56,7 +58,7 @@
   }
 
   // Returns { raw, error } from what the browser already loaded. Never re-requests the URL.
-  function readLoadedXmlSource() {
+  function readLoadedXmlSource(): { raw: string | null; error: string | null } {
     const ser = new XMLSerializer();
     const src = document.getElementById("webkit-xml-viewer-source-xml");
     if (src) return { raw: Array.from(src.childNodes, (n) => ser.serializeToString(n)).join("\n"), error: null };
@@ -64,7 +66,7 @@
       const pe = findParserError(document);
       if (!pe) return { raw: ser.serializeToString(document), error: null };
       // Browser recovered a partial document; show what it parsed, minus its error element.
-      const clone = document.cloneNode(true);
+      const clone = document.cloneNode(true) as Document;
       for (const e of Array.from(clone.getElementsByTagNameNS(XHTML_NS, "parsererror"))) e.remove();
       return { raw: ser.serializeToString(clone), error: pe.message + " (showing content up to the error)" };
     }
@@ -72,40 +74,34 @@
     return { raw: pre ? pre.textContent : null, error: null };
   }
 
-  function parseXml(raw) {
+  function parseXml(raw: string): { doc: Document | null; error: string | null } {
     const doc = new DOMParser().parseFromString(raw, "application/xml");
     const pe = findParserError(doc);
     return pe ? { doc: null, error: pe.message } : { doc, error: null };
   }
 
-  function countNodes(doc, cap) {
+  function countNodes(doc: Document, cap: number): number {
     const w = doc.createTreeWalker(doc, NodeFilter.SHOW_ELEMENT);
     let n = 0;
     while (w.nextNode() && n < cap) n++;
     return n;
   }
 
-  function formatByteSize(bytes) {
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / 1024 / 1024).toFixed(2) + " MB";
-  }
-
   // ---------------------------------------------------------------- DOM helpers
   // The page may be an XMLDocument (native XML viewer): createElement() would give
   // null-namespace elements and innerHTML would be parsed as XML, so always build XHTML nodes.
 
-  function createXhtmlElement(tag, cls, text) {
-    const e = document.createElementNS(XHTML_NS, tag);
+  function createXhtmlElement(tag: string, cls: string | null = null, text?: string): HTMLElement {
+    const e = document.createElementNS(XHTML_NS, tag) as HTMLElement;
     if (cls) e.setAttribute("class", cls);
     if (text != null) e.textContent = text;
     return e;
   }
 
-  function createTokenSpan(cls, text) { return createXhtmlElement("span", cls, text); }
+  function createTokenSpan(cls: string, text: string): HTMLElement { return createXhtmlElement("span", cls, text); }
 
-  function button(id, text) {
-    const b = createXhtmlElement("button", null, text);
+  function button(id: string, text: string): HTMLButtonElement {
+    const b = createXhtmlElement("button", null, text) as HTMLButtonElement;
     b.id = id;
     b.setAttribute("type", "button");
     return b;
@@ -115,7 +111,7 @@
 
   const NodeType = Node;
 
-  function isVisible(n) {
+  function isVisible(n: Node): boolean {
     switch (n.nodeType) {
       case NodeType.TEXT_NODE: return n.data.trim() !== "";
       case NodeType.ELEMENT_NODE:
@@ -127,13 +123,13 @@
     }
   }
 
-  function visibleChildren(n) {
-    const out = [];
+  function visibleChildren(n: ParentNode): Node[] {
+    const out: Node[] = [];
     for (const c of n.childNodes) if (isVisible(c)) out.push(c);
     return out;
   }
 
-  function shapeOf(el) {
+  function shapeOf(el: Element): { kind: "empty" | "compact" | "block"; children: Node[] } {
     const children = visibleChildren(el);
     if (children.length === 0) return { kind: "empty", children };
     if (children.length === 1 && children[0].nodeType === NodeType.TEXT_NODE) return { kind: "compact", children };
@@ -141,7 +137,7 @@
   }
 
   const lineCounts = new WeakMap();
-  function renderedLineCount(n) {
+  function renderedLineCount(n: Node): number {
     if (n.nodeType !== NodeType.ELEMENT_NODE) return 1;
     let c = lineCounts.get(n);
     if (c !== undefined) return c;
@@ -155,10 +151,10 @@
     return c;
   }
 
-  function xpathStep(el) {
+  function xpathStep(el: Element): string {
     const ns = el.namespaceURI, ln = el.localName;
     let idx = 0, total = 0;
-    for (const s of el.parentNode.children) {
+    for (const s of el.parentElement?.children ?? []) {
       if (s.localName === ln && s.namespaceURI === ns) {
         total++;
         if (s === el) idx = total;
@@ -169,7 +165,7 @@
     return total > 1 ? `${name}[${idx}]` : name;
   }
 
-  function xpathFor(el) {
+  function xpathFor(el: Element): string {
     const parts = [];
     for (let n = el; n && n.nodeType === NodeType.ELEMENT_NODE; n = n.parentNode) parts.unshift(xpathStep(n));
     return "/" + parts.join("/");
@@ -177,7 +173,7 @@
 
   // ---------------------------------------------------------------- viewer
 
-  function buildViewer({ raw, doc, error }) {
+  function buildViewer({ raw, doc, error }: { raw: string; doc: Document | null; error: string | null }) {
     const bytes = new TextEncoder().encode(raw).length;
     const nodeCount = doc ? countNodes(doc, LARGE_NODES + 1) : 0;
     const large = bytes > LARGE_BYTES || nodeCount > LARGE_NODES;
@@ -185,19 +181,19 @@
     let collapseDepth = large ? 1 : 8;
     let rawMode = !!error;
     let rawBuilt = false;
-    let selectedLine = null;
-    let selectedXPath = null;
-    let matches = [];   // array of arrays of <mark> (one group per match)
+    let selectedLine: HTMLElement | null = null;
+    let selectedXPath: string | null = null;
+    let matches: HTMLElement[][] = [];   // array of arrays of <mark> (one group per match)
     let matchIdx = -1;
     let capped = false;
     let theme = "system";
 
-    const lineOwner = new WeakMap(); // .xv-line -> XML node
-    const pending = new Map();       // collapsed, not-yet-rendered .xv-children -> { node, depth, start }
+    const lineOwner = new WeakMap<HTMLElement, Node>(); // .xv-line -> XML node
+    const pending = new Map<HTMLElement, { node: Element; depth: number; start: number }>(); // deferred child render state
 
     // ---- line rendering
 
-    function makeLine(num, depth, parts, owner) {
+    function makeLine(num: number, depth: number, parts: Node[], owner?: Node | null): HTMLElement {
       const line = createXhtmlElement("div", "xv-line");
       line.setAttribute("data-line", String(num));
       const code = createXhtmlElement("span", "xv-code");
@@ -208,7 +204,7 @@
       return line;
     }
 
-    function openTag(el, selfClose) {
+    function openTag(el: Element, selfClose: boolean): Node[] {
       const parts = [createTokenSpan("tk-bracket", "<"), createTokenSpan("tk-tag", el.nodeName)];
       for (const a of el.attributes) {
         parts.push(document.createTextNode(" "), createTokenSpan("tk-attr", a.name), createTokenSpan("tk-bracket", "="),
@@ -218,11 +214,11 @@
       return parts;
     }
 
-    function closeTag(el) {
+    function closeTag(el: Element): Node[] {
       return [createTokenSpan("tk-bracket", "</"), createTokenSpan("tk-tag", el.nodeName), createTokenSpan("tk-bracket", ">")];
     }
 
-    function renderNode(n, depth, num, out) {
+    function renderNode(n: Node, depth: number, num: number, out: HTMLElement | DocumentFragment): void {
       switch (n.nodeType) {
         case NodeType.TEXT_NODE:
           out.append(makeLine(num, depth, [createTokenSpan("tk-text", n.data.trim())], n)); return;
@@ -262,7 +258,7 @@
       }
     }
 
-    function renderChildren(parent, depth, num, out) {
+    function renderChildren(parent: ParentNode, depth: number, num: number, out: HTMLElement | DocumentFragment): void {
       const frag = document.createDocumentFragment();
       for (const child of visibleChildren(parent)) {
         renderNode(child, depth, num, frag);
@@ -271,7 +267,7 @@
       out.append(frag);
     }
 
-    function materialize(box) {
+    function materialize(box: HTMLElement): void {
       const p = pending.get(box);
       if (!p) return;
       pending.delete(box);
@@ -282,7 +278,7 @@
       while (pending.size) for (const box of Array.from(pending.keys())) materialize(box);
     }
 
-    function setCollapsed(box, collapsed) {
+    function setCollapsed(box: HTMLElement, collapsed: boolean): void {
       if (!collapsed) materialize(box);
       box.classList.toggle("collapsed", collapsed);
       const open = box.previousElementSibling;
@@ -305,7 +301,7 @@
 
     const controls = createXhtmlElement("div");
     controls.id = "xv-controls";
-    const search = createXhtmlElement("input");
+    const search = createXhtmlElement("input") as HTMLInputElement;
     search.id = "xv-search";
     search.setAttribute("type", "search");
     search.setAttribute("placeholder", "Search…");
@@ -395,8 +391,8 @@
 
     // ---- search
 
-    function textSegments(code) {
-      const segs = [];
+    function textSegments(code: HTMLElement): { node: Text; start: number; end: number }[] {
+      const segs: { node: Text; start: number; end: number }[] = [];
       let pos = 0;
       const w = document.createTreeWalker(code, NodeFilter.SHOW_TEXT, {
         acceptNode: (t) => (t.parentNode.closest(".xv-indent, .xv-toggle, .xv-ellipsis")
@@ -409,7 +405,7 @@
       return segs;
     }
 
-    function wrapText(node, a, b) {
+    function wrapText(node: Text, a: number, b: number): HTMLElement {
       let t = node;
       if (a > 0) t = t.splitText(a);
       if (b - a < t.data.length) t.splitText(b - a);
@@ -420,7 +416,7 @@
     }
 
     function clearMarks() {
-      const parents = new Set();
+      const parents = new Set<Node>();
       for (const group of matches) {
         for (const m of group) {
           const p = m.parentNode;
