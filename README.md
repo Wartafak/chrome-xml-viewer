@@ -1,13 +1,13 @@
 # Brave XML Viewer
 
-Manifest V3 extension for Brave (Chromium) — auto-formats XML with syntax highlighting, pretty-print + collapse, line numbers, search, and XPath. Offline, follows Brave light/dark theme with a manual System/Light/Dark toggle, respects XSLT.
+Manifest V3 extension for Chromium-based browsers — auto-formats XML with syntax highlighting, collapsible elements, line numbers, search, and XPath. It is designed for Chrome 88+ and should also work in other Chromium-based browsers that support Manifest V3, including Microsoft Edge, Brave, Opera, and Vivaldi. Browser-specific XML handling may vary. The viewer works offline, follows the browser's light/dark color preference with a manual System/Light/Dark toggle, and respects XSLT.
 
-## Install in Brave
+## Install in a Chromium-based browser
 
-1. Open `brave://extensions/`
+1. Open the browser's extensions page (for example, `chrome://extensions/`, `edge://extensions/`, or `brave://extensions/`).
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked** → select this folder (`chrome-xml-viewer/`)
-4. For local files: on the extension card click **Details** → enable **Allow access to file URLs**
+4. For local files: on the extension card click **Details** → enable **Allow access to file URLs** (wording may vary by browser)
 5. Open `test/sample.xml` via `file://` or serve: `python3 -m http.server` → `http://localhost:8000/test/sample.xml`
 
 ## Test cases
@@ -16,10 +16,10 @@ Manifest V3 extension for Brave (Chromium) — auto-formats XML with syntax high
 - `test/invalid.xml` — error banner + raw view
 - Large file: duplicate `sample.xml` content to >1.5MB, confirm auto-collapse banner
 - XSLT: add `<?xml-stylesheet type="text/xsl" href="style.xsl"?>` → viewer must NOT override
-- Theme: `brave://settings/appearance` light/dark → viewer follows via `prefers-color-scheme`; toolbar **Theme** button cycles System → Light → Dark (persisted via `chrome.storage`)
+- Theme: change the browser or OS light/dark preference → viewer follows via `prefers-color-scheme`; toolbar **Theme** button cycles System → Light → Dark (persisted via `chrome.storage`)
 
 ## Structure
 
 - `manifest.json` — MV3, `<all_urls>` content script at `document_start`
-- `content.js` — detect XML, fetch raw, parse, render tree/raw, search/XPath
-- `viewer.css` — Brave light/dark variables, tree/search/error styles
+- `content.js` — detect and parse the loaded XML, render tree/raw views, search/XPath
+- `viewer.css` — light/dark theme variables, tree/search/error styles
