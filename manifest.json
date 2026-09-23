@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Brave XML Viewer",
+  "name": "Chromium XML Viewer",
   "version": "0.1.8",
-  "description": "Auto-format, highlight and explore XML files in Brave (offline, respects XSLT).",
+  "description": "Auto-format, highlight and explore XML files in Chromium-based browsers (offline, respects XSLT).",
   "minimum_chrome_version": "88",
   "content_scripts": [
     {

@@ -300,7 +300,7 @@
     const titleEl = createXhtmlElement("span", null, title);
     titleEl.id = "xv-title";
     const metaEl = createXhtmlElement("span", null,
-      `${formatByteSize(bytes)} · ${error ? "invalid XML" : `${nodeCount > LARGE_NODES ? LARGE_NODES + "+" : nodeCount} nodes`} · auto (Brave theme)`);
+      `${formatByteSize(bytes)} · ${error ? "invalid XML" : `${nodeCount > LARGE_NODES ? LARGE_NODES + "+" : nodeCount} nodes`} · auto (system theme)`);
     metaEl.id = "xv-meta";
 
     const controls = createXhtmlElement("div");

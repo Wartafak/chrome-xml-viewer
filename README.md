@@ -1,10 +1,10 @@
-# Brave XML Viewer
+# Chromium XML Viewer
 
-Manifest V3 extension for Chromium-based browsers — auto-formats XML with syntax highlighting, collapsible elements, line numbers, search, and XPath. It is designed for Chrome 88+ and should also work in other Chromium-based browsers that support Manifest V3, including Microsoft Edge, Brave, Opera, and Vivaldi. Browser-specific XML handling may vary. The viewer works offline, follows the browser's light/dark color preference with a manual System/Light/Dark toggle, and respects XSLT.
+Manifest V3 extension for Chromium-based browsers — auto-formats XML with syntax highlighting, collapsible elements, line numbers, search, and XPath. It is designed for Chrome 88+ and should also work in other Chromium-based browsers that support Manifest V3, including Microsoft Edge, Opera, and Vivaldi. Browser-specific XML handling may vary. The viewer works offline, follows the browser's light/dark color preference with a manual System/Light/Dark toggle, and respects XSLT.
 
 ## Install in a Chromium-based browser
 
-1. Open the browser's extensions page (for example, `chrome://extensions/`, `edge://extensions/`, or `brave://extensions/`).
+1. Open the browser's extensions page (for example, `chrome://extensions/` or `edge://extensions/`).
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked** → select this folder (`chrome-xml-viewer/`)
 4. For local files: on the extension card click **Details** → enable **Allow access to file URLs** (wording may vary by browser)
