@@ -1,8 +1,8 @@
-# Chromium XML Viewer
+# Chrome XML Viewer
 
-Manifest V3 extension for Chromium-based browsers — auto-formats XML with syntax highlighting, collapsible elements, line numbers, search, and XPath. It is designed for Chrome 88+ and should also work in other Chromium-based browsers that support Manifest V3, including Microsoft Edge, Opera, and Vivaldi. Browser-specific XML handling may vary. The viewer works offline, follows the browser's light/dark color preference with a manual System/Light/Dark toggle, and respects XSLT.
+Manifest V3 extension for Chrome 88+ and compatible Chromium-based browsers that support Manifest V3. It auto-formats XML with syntax highlighting, collapsible elements, line numbers, search, and XPath. Browser-specific XML handling may vary. The viewer works offline, follows the browser's light/dark color preference with a manual System/Light/Dark toggle, and respects XSLT.
 
-## Install in a Chromium-based browser
+## Install in Chrome or another Chromium-based browser
 
 1. Open the browser's extensions page (for example, `chrome://extensions/` or `edge://extensions/`).
 2. Enable **Developer mode** (top right)
