@@ -1,4 +1,3 @@
-// @ts-nocheck -- this legacy DOM-heavy entry point is being migrated incrementally.
 import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
 (() => {
@@ -10,7 +9,8 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
   const LARGE_NODES = 15000;
   const MAX_MATCHES = 1000;
   const THEME_KEY = "xvTheme";
-  const THEMES = ["system", "light", "dark"];
+  const THEMES = ["system", "light", "dark"] as const;
+  type Theme = typeof THEMES[number];
   const THEME_LABELS = { system: "System", light: "Light", dark: "Dark" };
 
   // ---------------------------------------------------------------- detection
@@ -45,7 +45,7 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
   function hasStylesheetPI(doc: Document) {
     for (const n of doc.childNodes) {
-      if (n.nodeType === Node.PROCESSING_INSTRUCTION_NODE && n.target === "xml-stylesheet") return true;
+      if (n instanceof ProcessingInstruction && n.target === "xml-stylesheet") return true;
     }
     return false;
   }
@@ -109,16 +109,14 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
   // ---------------------------------------------------------------- XML tree model
 
-  const NodeType = Node;
-
   function isVisible(n: Node): boolean {
     switch (n.nodeType) {
-      case NodeType.TEXT_NODE: return n.data.trim() !== "";
-      case NodeType.ELEMENT_NODE:
-      case NodeType.CDATA_SECTION_NODE:
-      case NodeType.COMMENT_NODE:
-      case NodeType.PROCESSING_INSTRUCTION_NODE:
-      case NodeType.DOCUMENT_TYPE_NODE: return true;
+      case Node.TEXT_NODE: return (n as Text).data.trim() !== "";
+      case Node.ELEMENT_NODE:
+      case Node.CDATA_SECTION_NODE:
+      case Node.COMMENT_NODE:
+      case Node.PROCESSING_INSTRUCTION_NODE:
+      case Node.DOCUMENT_TYPE_NODE: return true;
       default: return false;
     }
   }
@@ -132,13 +130,13 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
   function shapeOf(el: Element): { kind: "empty" | "compact" | "block"; children: Node[] } {
     const children = visibleChildren(el);
     if (children.length === 0) return { kind: "empty", children };
-    if (children.length === 1 && children[0].nodeType === NodeType.TEXT_NODE) return { kind: "compact", children };
+    if (children.length === 1 && children[0].nodeType === Node.TEXT_NODE) return { kind: "compact", children };
     return { kind: "block", children };
   }
 
-  const lineCounts = new WeakMap();
+  const lineCounts = new WeakMap<Element, number>();
   function renderedLineCount(n: Node): number {
-    if (n.nodeType !== NodeType.ELEMENT_NODE) return 1;
+    if (!(n instanceof Element)) return 1;
     let c = lineCounts.get(n);
     if (c !== undefined) return c;
     const s = shapeOf(n);
@@ -160,14 +158,14 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
         if (s === el) idx = total;
       }
     }
-    const q = (v) => (v.includes("'") ? `"${v}"` : `'${v}'`);
+    const q = (v: string) => (v.includes("'") ? `"${v}"` : `'${v}'`);
     const name = ns ? `*[local-name()=${q(ln)} and namespace-uri()=${q(ns)}]` : ln;
     return total > 1 ? `${name}[${idx}]` : name;
   }
 
   function xpathFor(el: Element): string {
-    const parts = [];
-    for (let n = el; n && n.nodeType === NodeType.ELEMENT_NODE; n = n.parentNode) parts.unshift(xpathStep(n));
+    const parts: string[] = [];
+    for (let n: Element | null = el; n; n = n.parentElement) parts.unshift(xpathStep(n));
     return "/" + parts.join("/");
   }
 
@@ -186,7 +184,7 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     let matches: HTMLElement[][] = [];   // array of arrays of <mark> (one group per match)
     let matchIdx = -1;
     let capped = false;
-    let theme = "system";
+    let theme: Theme = "system";
 
     const lineOwner = new WeakMap<HTMLElement, Node>(); // .xv-line -> XML node
     const pending = new Map<HTMLElement, { node: Element; depth: number; start: number }>(); // deferred child render state
@@ -205,7 +203,7 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     }
 
     function openTag(el: Element, selfClose: boolean): Node[] {
-      const parts = [createTokenSpan("tk-bracket", "<"), createTokenSpan("tk-tag", el.nodeName)];
+      const parts: Node[] = [createTokenSpan("tk-bracket", "<"), createTokenSpan("tk-tag", el.nodeName)];
       for (const a of el.attributes) {
         parts.push(document.createTextNode(" "), createTokenSpan("tk-attr", a.name), createTokenSpan("tk-bracket", "="),
           createTokenSpan("tk-bracket", "\""), createTokenSpan("tk-val", a.value), createTokenSpan("tk-bracket", "\""));
@@ -219,24 +217,26 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     }
 
     function renderNode(n: Node, depth: number, num: number, out: HTMLElement | DocumentFragment): void {
-      switch (n.nodeType) {
-        case NodeType.TEXT_NODE:
-          out.append(makeLine(num, depth, [createTokenSpan("tk-text", n.data.trim())], n)); return;
-        case NodeType.CDATA_SECTION_NODE:
-          out.append(makeLine(num, depth, [createTokenSpan("tk-cdata", `<![CDATA[${n.data}]]>`)], n)); return;
-        case NodeType.COMMENT_NODE:
-          out.append(makeLine(num, depth, [createTokenSpan("tk-comment", `<!--${n.data}-->`)], n)); return;
-        case NodeType.PROCESSING_INSTRUCTION_NODE:
-          out.append(makeLine(num, depth, [createTokenSpan("tk-pi", `<?${n.target}${n.data ? " " + n.data : ""}?>`)], n)); return;
-        case NodeType.DOCUMENT_TYPE_NODE:
-          out.append(makeLine(num, depth, [createTokenSpan("tk-doctype", `<!DOCTYPE ${n.name}>`)], n)); return;
-        case NodeType.ELEMENT_NODE: break;
-        default: return;
+      if (n instanceof CDATASection) {
+        out.append(makeLine(num, depth, [createTokenSpan("tk-cdata", `<![CDATA[${n.data}]]>`)], n)); return;
       }
+      if (n instanceof Text) {
+        out.append(makeLine(num, depth, [createTokenSpan("tk-text", n.data.trim())], n)); return;
+      }
+      if (n instanceof Comment) {
+        out.append(makeLine(num, depth, [createTokenSpan("tk-comment", `<!--${n.data}-->`)], n)); return;
+      }
+      if (n instanceof ProcessingInstruction) {
+        out.append(makeLine(num, depth, [createTokenSpan("tk-pi", `<?${n.target}${n.data ? " " + n.data : ""}?>`)], n)); return;
+      }
+      if (n instanceof DocumentType) {
+        out.append(makeLine(num, depth, [createTokenSpan("tk-doctype", `<!DOCTYPE ${n.name}>`)], n)); return;
+      }
+      if (!(n instanceof Element)) return;
       const s = shapeOf(n);
       if (s.kind === "empty") { out.append(makeLine(num, depth, openTag(n, true), n)); return; }
       if (s.kind === "compact") {
-        out.append(makeLine(num, depth, [...openTag(n, false), createTokenSpan("tk-text", s.children[0].data.trim()), ...closeTag(n)], n));
+        out.append(makeLine(num, depth, [...openTag(n, false), createTokenSpan("tk-text", (s.children[0] as Text).data.trim()), ...closeTag(n)], n));
         return;
       }
       const toggle = createXhtmlElement("button", "xv-toggle");
@@ -282,8 +282,8 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       if (!collapsed) materialize(box);
       box.classList.toggle("collapsed", collapsed);
       const open = box.previousElementSibling;
-      const toggle = open && open.querySelector(".xv-toggle");
-      const ellipsis = open && open.querySelector(".xv-ellipsis");
+      const toggle = open?.querySelector(".xv-toggle");
+      const ellipsis = open?.querySelector<HTMLElement>(".xv-ellipsis");
       if (toggle) toggle.textContent = collapsed ? "▸" : "▾";
       if (ellipsis) ellipsis.style.display = collapsed ? "" : "none";
     }
@@ -365,12 +365,12 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
     // ---- selection
 
-    function selectLine(line) {
+    function selectLine(line: HTMLElement) {
       if (selectedLine) selectedLine.classList.remove("selected");
       selectedLine = line;
       line.classList.add("selected");
       const owner = lineOwner.get(line);
-      selectedXPath = owner && owner.nodeType === NodeType.ELEMENT_NODE ? xpathFor(owner) : null;
+      selectedXPath = owner instanceof Element ? xpathFor(owner) : null;
       xpathEl.textContent = selectedXPath || "(no xpath)";
       copyBtn.disabled = !selectedXPath;
       line.scrollIntoView({ block: "nearest" });
@@ -379,11 +379,11 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     main.addEventListener("click", (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
-      const line = target.closest(".xv-line");
+      const line = target.closest<HTMLElement>(".xv-line");
       if (!line) return;
       if (target.closest(".xv-toggle, .xv-ellipsis")) {
         const box = line.nextElementSibling;
-        if (box && box.classList.contains("xv-children")) setCollapsed(box, !box.classList.contains("collapsed"));
+        if (box instanceof HTMLElement && box.classList.contains("xv-children")) setCollapsed(box, !box.classList.contains("collapsed"));
         return;
       }
       selectLine(line);
@@ -395,12 +395,13 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       const segs: { node: Text; start: number; end: number }[] = [];
       let pos = 0;
       const w = document.createTreeWalker(code, NodeFilter.SHOW_TEXT, {
-        acceptNode: (t) => (t.parentNode.closest(".xv-indent, .xv-toggle, .xv-ellipsis")
+        acceptNode: (t) => ((t.parentElement?.closest(".xv-indent, .xv-toggle, .xv-ellipsis"))
           ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
       });
       for (let t = w.nextNode(); t; t = w.nextNode()) {
-        segs.push({ node: t, start: pos, end: pos + t.data.length });
-        pos += t.data.length;
+        const text = t as Text;
+        segs.push({ node: text, start: pos, end: pos + text.data.length });
+        pos += text.data.length;
       }
       return segs;
     }
@@ -410,7 +411,7 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       if (a > 0) t = t.splitText(a);
       if (b - a < t.data.length) t.splitText(b - a);
       const m = createXhtmlElement("mark");
-      t.parentNode.replaceChild(m, t);
+      t.parentNode!.replaceChild(m, t);
       m.append(t);
       return m;
     }
@@ -446,21 +447,21 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
         if (!rawMode) materializeAll();
         const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu");
         outer:
-        for (const code of view.querySelectorAll(".xv-code")) {
+        for (const code of view.querySelectorAll<HTMLElement>(".xv-code")) {
           const segs = textSegments(code);
           if (!segs.length) continue;
           const text = segs.map((s) => s.node.data).join("");
-          const found = [];
+          const found: [number, number][] = [];
           re.lastIndex = 0;
           for (let m = re.exec(text); m; m = re.exec(text)) {
             if (matches.length + found.length >= MAX_MATCHES) { capped = true; break; }
             found.push([m.index, m.index + m[0].length]);
           }
           // Wrap back-to-front so earlier offsets stay valid after splitText().
-          const groups = [];
+          const groups: HTMLElement[][] = [];
           for (let i = found.length - 1; i >= 0; i--) {
             const [s, e] = found[i];
-            const group = [];
+            const group: HTMLElement[] = [];
             for (let j = segs.length - 1; j >= 0; j--) {
               const seg = segs[j];
               if (seg.end <= s || seg.start >= e) continue;
@@ -476,19 +477,19 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       updateCount();
     }
 
-    function setCurrent(i) {
+    function setCurrent(i: number) {
       if (matchIdx >= 0) for (const m of matches[matchIdx]) m.classList.remove("current");
       matchIdx = i;
       const group = matches[i];
       for (const m of group) m.classList.add("current");
-      for (let box = group[0].closest(".xv-children.collapsed"); box; box = box.closest(".xv-children.collapsed")) {
+      for (let box = group[0].closest<HTMLElement>(".xv-children.collapsed"); box; box = box.parentElement?.closest<HTMLElement>(".xv-children.collapsed") ?? null) {
         setCollapsed(box, false);
       }
       group[0].scrollIntoView({ block: "center" });
       updateCount();
     }
 
-    function stepMatch(d) {
+    function stepMatch(d: number) {
       if (!matches.length) return;
       setCurrent((matchIdx + d + matches.length) % matches.length);
     }
@@ -512,11 +513,11 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     expandBtn.addEventListener("click", () => {
       collapseDepth = Infinity;
       materializeAll();
-      for (const box of main.querySelectorAll(".xv-children")) setCollapsed(box, false);
+      for (const box of main.querySelectorAll<HTMLElement>(".xv-children")) setCollapsed(box, false);
     });
     collapseBtn.addEventListener("click", () => {
       collapseDepth = 0;
-      for (const box of main.querySelectorAll(".xv-children")) setCollapsed(box, true);
+      for (const box of main.querySelectorAll<HTMLElement>(".xv-children")) setCollapsed(box, true);
     });
     rawBtn.addEventListener("click", () => {
       rawMode = !rawMode;
@@ -531,8 +532,8 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       }, (err) => console.warn("[XML Viewer] clipboard write failed:", err));
     });
 
-    function applyTheme(t) {
-      theme = THEMES.includes(t) ? t : "system";
+    function applyTheme(t: unknown) {
+      theme = typeof t === "string" && THEMES.includes(t as Theme) ? t as Theme : "system";
       if (theme === "system") document.documentElement.removeAttribute("data-theme");
       else document.documentElement.setAttribute("data-theme", theme);
       themeBtn.textContent = `Theme: ${THEME_LABELS[theme]}`;
@@ -561,7 +562,7 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     return { bodyNodes: [header, banner, errorBox, main, rawBox, status], afterMount };
   }
 
-  function mount(bodyNodes) {
+  function mount(bodyNodes: HTMLElement[]) {
     const name = location.pathname.split("/").filter(Boolean).pop() || location.host || "XML";
     const headNodes = [createXhtmlElement("title", null, `${name} — XML Viewer`)];
     const meta = createXhtmlElement("meta");
