@@ -1,0 +1,293 @@
+:root {
+  --xv-bg: #ffffff;
+  --xv-fg: #1a1a1a;
+  --xv-header-bg: #f6f8fa;
+  --xv-border: #d0d7de;
+  --xv-gutter: #6e7781;
+  --xv-gutter-bg: #f6f8fa;
+  --xv-tag: #116329;
+  --xv-tag-bracket: #0550ae;
+  --xv-attr: #953800;
+  --xv-val: #0a3069;
+  --xv-text: #1a1a1a;
+  --xv-comment: #6e7781;
+  --xv-cdata: #8250df;
+  --xv-pi: #8250df;
+  --xv-hover: #f0f4f8;
+  --xv-selected: #ddf4ff;
+  --xv-mark: #fff8c5;
+  --xv-mark-current: #ffdf5d;
+  --xv-banner-bg: #fff8c5;
+  --xv-error-bg: #ffebe9;
+  --xv-error-border: #ff8182;
+  --xv-btn-bg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --xv-bg: #0d1117;
+    --xv-fg: #e6edf3;
+    --xv-header-bg: #161b22;
+    --xv-border: #30363d;
+    --xv-gutter: #7d8590;
+    --xv-gutter-bg: #161b22;
+    --xv-tag: #7ee787;
+    --xv-tag-bracket: #79c0ff;
+    --xv-attr: #ffa657;
+    --xv-val: #a5d6ff;
+    --xv-text: #e6edf3;
+    --xv-comment: #7d8590;
+    --xv-cdata: #d2a8ff;
+    --xv-pi: #d2a8ff;
+    --xv-hover: #1c2128;
+    --xv-selected: #1f3a4d;
+    --xv-mark: #5a4a00;
+    --xv-mark-current: #9e7c00;
+    --xv-banner-bg: #3b2f00;
+    --xv-error-bg: #490202;
+    --xv-error-border: #ff8182;
+    --xv-btn-bg: #21262d;
+  }
+}
+
+/* Manual theme override (3-state toggle: system / light / dark).
+   Higher specificity than the media query above, so an explicit
+   choice always wins; removing data-theme falls back to system. */
+:root[data-theme="light"] {
+  --xv-bg: #ffffff;
+  --xv-fg: #1a1a1a;
+  --xv-header-bg: #f6f8fa;
+  --xv-border: #d0d7de;
+  --xv-gutter: #6e7781;
+  --xv-gutter-bg: #f6f8fa;
+  --xv-tag: #116329;
+  --xv-tag-bracket: #0550ae;
+  --xv-attr: #953800;
+  --xv-val: #0a3069;
+  --xv-text: #1a1a1a;
+  --xv-comment: #6e7781;
+  --xv-cdata: #8250df;
+  --xv-pi: #8250df;
+  --xv-hover: #f0f4f8;
+  --xv-selected: #ddf4ff;
+  --xv-mark: #fff8c5;
+  --xv-mark-current: #ffdf5d;
+  --xv-banner-bg: #fff8c5;
+  --xv-error-bg: #ffebe9;
+  --xv-error-border: #ff8182;
+  --xv-btn-bg: #ffffff;
+}
+
+:root[data-theme="dark"] {
+  --xv-bg: #0d1117;
+  --xv-fg: #e6edf3;
+  --xv-header-bg: #161b22;
+  --xv-border: #30363d;
+  --xv-gutter: #7d8590;
+  --xv-gutter-bg: #161b22;
+  --xv-tag: #7ee787;
+  --xv-tag-bracket: #79c0ff;
+  --xv-attr: #ffa657;
+  --xv-val: #a5d6ff;
+  --xv-text: #e6edf3;
+  --xv-comment: #7d8590;
+  --xv-cdata: #d2a8ff;
+  --xv-pi: #d2a8ff;
+  --xv-hover: #1c2128;
+  --xv-selected: #1f3a4d;
+  --xv-mark: #5a4a00;
+  --xv-mark-current: #9e7c00;
+  --xv-banner-bg: #3b2f00;
+  --xv-error-bg: #490202;
+  --xv-error-border: #ff8182;
+  --xv-btn-bg: #21262d;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--xv-bg);
+  color: var(--xv-fg);
+  font: 13px/1.5 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+#xv-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--xv-header-bg);
+  border-bottom: 1px solid var(--xv-border);
+}
+
+#xv-title {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40vw;
+}
+
+#xv-meta {
+  color: var(--xv-gutter);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#xv-controls {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+#xv-controls input[type="search"] {
+  background: var(--xv-btn-bg);
+  color: var(--xv-fg);
+  border: 1px solid var(--xv-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font: inherit;
+  width: 200px;
+}
+
+#xv-controls button {
+  background: var(--xv-btn-bg);
+  color: var(--xv-fg);
+  border: 1px solid var(--xv-border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+#xv-controls button:hover { filter: brightness(0.96); }
+
+#xv-count { color: var(--xv-gutter); font-size: 12px; min-width: 60px; }
+
+#xv-banner {
+  display: none;
+  padding: 8px 12px;
+  background: var(--xv-banner-bg);
+  border-bottom: 1px solid var(--xv-border);
+  font-size: 12px;
+}
+
+#xv-error {
+  display: none;
+  margin: 12px;
+  padding: 10px 12px;
+  background: var(--xv-error-bg);
+  border: 1px solid var(--xv-error-border);
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
+#xv-main { padding: 8px 0 60px 0; }
+
+.xv-line {
+  display: flex;
+  padding-right: 16px;
+}
+.xv-line:hover { background: var(--xv-hover); }
+.xv-line.selected { background: var(--xv-selected); }
+
+.xv-gutter {
+  flex: 0 0 52px;
+  text-align: right;
+  padding-right: 12px;
+  color: var(--xv-gutter);
+  background: var(--xv-gutter-bg);
+  user-select: none;
+  position: sticky;
+  left: 0;
+}
+
+.xv-code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-left: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.xv-toggle {
+  display: inline-block;
+  width: 18px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  color: var(--xv-gutter);
+  border: none;
+  background: none;
+  font: inherit;
+  padding: 0;
+}
+.xv-toggle:hover { color: var(--xv-fg); }
+
+.xv-children { margin-left: 0; }
+.xv-children.collapsed { display: none; }
+
+.xv-ellipsis {
+  color: var(--xv-gutter);
+  background: var(--xv-gutter-bg);
+  border: 1px solid var(--xv-border);
+  border-radius: 4px;
+  padding: 0 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.tk-bracket { color: var(--xv-tag-bracket); }
+.tk-tag { color: var(--xv-tag); }
+.tk-attr { color: var(--xv-attr); }
+.tk-val { color: var(--xv-val); }
+.tk-text { color: var(--xv-text); overflow-wrap: anywhere; }
+.tk-comment, .tk-pi, .tk-cdata, .tk-doctype {
+  color: var(--xv-comment);
+  font-style: italic;
+}
+.tk-cdata, .tk-pi { color: var(--xv-cdata); }
+
+mark {
+  background: var(--xv-mark);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+mark.current { background: var(--xv-mark-current); outline: 1px solid currentColor; }
+
+#xv-status {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--xv-header-bg);
+  border-top: 1px solid var(--xv-border);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+#xv-xpath {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+#xv-raw {
+  display: none;
+  padding: 8px 0 60px 0;
+}
+#xv-raw pre { margin: 0; }
