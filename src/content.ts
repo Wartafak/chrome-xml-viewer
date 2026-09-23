@@ -2,7 +2,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
 (() => {
   "use strict";
-  if (window.top !== window.self) return;
+  if (window.top !== window.self) {
+    return;
+  }
 
   const XHTML_NS = "http://www.w3.org/1999/xhtml";
   const LARGE_BYTES = 1.5 * 1024 * 1024;
@@ -22,37 +24,59 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
   function bodyLooksLikeXml() {
     try {
       const pre = document.querySelector("body > pre");
-      if (!pre || document.querySelectorAll("body > *").length !== 1) return false;
+      if (!pre || document.querySelectorAll("body > *").length !== 1) {
+        return false;
+      }
       const t = (pre.textContent || "").trim();
-      if (t.length < 2 || !t.startsWith("<")) return false;
-      if (/^<!doctype\s+html/i.test(t) || /^<html[\s>]/i.test(t)) return false;
+      if (t.length < 2 || !t.startsWith("<")) {
+        return false;
+      }
+      if (/^<!doctype\s+html/i.test(t) || /^<html[\s>]/i.test(t)) {
+        return false;
+      }
       return /^<\?xml[\s>]/.test(t) || /^<[A-Za-z_][\w.:-]*(\s[^>]*)?\/?>/.test(t);
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   }
 
   // "declared": content type / extension / native viewer say it is XML.
   // "sniffed": only the text/plain body looks like XML; must parse cleanly to be taken over.
   function candidateKind() {
-    if (isNativeXmlViewer()) return "declared";
+    if (isNativeXmlViewer()) {
+      return "declared";
+    }
     const ct = (document.contentType || "").toLowerCase().split(";")[0].trim();
-    if (ct === "image/svg+xml" || ct === "application/xhtml+xml") return null;
-    if (ct.includes("xml") || ct.includes("rss") || ct.includes("atom")) return "declared";
-    if ((ct === "text/plain" || ct === "text/html" || ct === "") && hasXmlExtension(location.href)) return "declared";
+    if (ct === "image/svg+xml" || ct === "application/xhtml+xml") {
+      return null;
+    }
+    if (ct.includes("xml") || ct.includes("rss") || ct.includes("atom")) {
+      return "declared";
+    }
+    if ((ct === "text/plain" || ct === "text/html" || ct === "") && hasXmlExtension(location.href)) {
+      return "declared";
+    }
     // Server sent XML as text/plain without an .xml extension; the browser wraps it in <body><pre>.
-    if (ct === "text/plain" && bodyLooksLikeXml()) return "sniffed";
+    if (ct === "text/plain" && bodyLooksLikeXml()) {
+      return "sniffed";
+    }
     return null;
   }
 
   function hasStylesheetPI(doc: Document) {
     for (const n of doc.childNodes) {
-      if (n instanceof ProcessingInstruction && n.target === "xml-stylesheet") return true;
+      if (n instanceof ProcessingInstruction && n.target === "xml-stylesheet") {
+        return true;
+      }
     }
     return false;
   }
 
   function findParserError(doc: Document): { node: Element; message: string } | null {
     const pe = doc.getElementsByTagNameNS(XHTML_NS, "parsererror")[0];
-    if (!pe) return null;
+    if (!pe) {
+      return null;
+    }
     const detail = pe.querySelector("div") || pe;
     return { node: pe, message: (detail.textContent || "parse error").trim() };
   }
@@ -61,13 +85,19 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
   function readLoadedXmlSource(): { raw: string | null; error: string | null } {
     const ser = new XMLSerializer();
     const src = document.getElementById("webkit-xml-viewer-source-xml");
-    if (src) return { raw: Array.from(src.childNodes, (n) => ser.serializeToString(n)).join("\n"), error: null };
+    if (src) {
+      return { raw: Array.from(src.childNodes, (n) => ser.serializeToString(n)).join("\n"), error: null };
+    }
     if (!(document instanceof HTMLDocument)) {
       const pe = findParserError(document);
-      if (!pe) return { raw: ser.serializeToString(document), error: null };
+      if (!pe) {
+        return { raw: ser.serializeToString(document), error: null };
+      }
       // Browser recovered a partial document; show what it parsed, minus its error element.
       const clone = document.cloneNode(true) as Document;
-      for (const e of Array.from(clone.getElementsByTagNameNS(XHTML_NS, "parsererror"))) e.remove();
+      for (const e of Array.from(clone.getElementsByTagNameNS(XHTML_NS, "parsererror"))) {
+        e.remove();
+      }
       return { raw: ser.serializeToString(clone), error: pe.message + " (showing content up to the error)" };
     }
     const pre = document.querySelector("body > pre");
@@ -83,7 +113,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
   function countNodes(doc: Document, cap: number): number {
     const w = doc.createTreeWalker(doc, NodeFilter.SHOW_ELEMENT);
     let n = 0;
-    while (w.nextNode() && n < cap) n++;
+    while (w.nextNode() && n < cap) {
+      n++;
+    }
     return n;
   }
 
@@ -93,8 +125,12 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
   function createXhtmlElement(tag: string, cls: string | null = null, text?: string): HTMLElement {
     const e = document.createElementNS(XHTML_NS, tag) as HTMLElement;
-    if (cls) e.setAttribute("class", cls);
-    if (text != null) e.textContent = text;
+    if (cls) {
+      e.setAttribute("class", cls);
+    }
+    if (text != null) {
+      e.textContent = text;
+    }
     return e;
   }
 
@@ -111,39 +147,59 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
   function isVisible(n: Node): boolean {
     switch (n.nodeType) {
-      case Node.TEXT_NODE: return (n as Text).data.trim() !== "";
+      case Node.TEXT_NODE: {
+        return (n as Text).data.trim() !== "";
+      }
       case Node.ELEMENT_NODE:
       case Node.CDATA_SECTION_NODE:
       case Node.COMMENT_NODE:
       case Node.PROCESSING_INSTRUCTION_NODE:
-      case Node.DOCUMENT_TYPE_NODE: return true;
-      default: return false;
+      case Node.DOCUMENT_TYPE_NODE: {
+        return true;
+      }
+      default: {
+        return false;
+      }
     }
   }
 
   function visibleChildren(n: ParentNode): Node[] {
     const out: Node[] = [];
-    for (const c of n.childNodes) if (isVisible(c)) out.push(c);
+    for (const c of n.childNodes) {
+      if (isVisible(c)) {
+        out.push(c);
+      }
+    }
     return out;
   }
 
   function shapeOf(el: Element): { kind: "empty" | "compact" | "block"; children: Node[] } {
     const children = visibleChildren(el);
-    if (children.length === 0) return { kind: "empty", children };
-    if (children.length === 1 && children[0].nodeType === Node.TEXT_NODE) return { kind: "compact", children };
+    if (children.length === 0) {
+      return { kind: "empty", children };
+    }
+    if (children.length === 1 && children[0].nodeType === Node.TEXT_NODE) {
+      return { kind: "compact", children };
+    }
     return { kind: "block", children };
   }
 
   const lineCounts = new WeakMap<Element, number>();
   function renderedLineCount(n: Node): number {
-    if (!(n instanceof Element)) return 1;
+    if (!(n instanceof Element)) {
+      return 1;
+    }
     let c = lineCounts.get(n);
-    if (c !== undefined) return c;
+    if (c !== undefined) {
+      return c;
+    }
     const s = shapeOf(n);
     c = 1;
     if (s.kind === "block") {
       c = 2;
-      for (const child of s.children) c += renderedLineCount(child);
+      for (const child of s.children) {
+        c += renderedLineCount(child);
+      }
     }
     lineCounts.set(n, c);
     return c;
@@ -155,7 +211,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     for (const s of el.parentElement?.children ?? []) {
       if (s.localName === ln && s.namespaceURI === ns) {
         total++;
-        if (s === el) idx = total;
+        if (s === el) {
+          idx = total;
+        }
       }
     }
     const q = (v: string) => (v.includes("'") ? `"${v}"` : `'${v}'`);
@@ -165,7 +223,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
   function xpathFor(el: Element): string {
     const parts: string[] = [];
-    for (let n: Element | null = el; n; n = n.parentElement) parts.unshift(xpathStep(n));
+    for (let n: Element | null = el; n; n = n.parentElement) {
+      parts.unshift(xpathStep(n));
+    }
     return "/" + parts.join("/");
   }
 
@@ -195,10 +255,14 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       const line = createXhtmlElement("div", "xv-line");
       line.setAttribute("data-line", String(num));
       const code = createXhtmlElement("span", "xv-code");
-      if (depth > 0) code.append(createXhtmlElement("span", "xv-indent", "  ".repeat(depth)));
+      if (depth > 0) {
+        code.append(createXhtmlElement("span", "xv-indent", "  ".repeat(depth)));
+      }
       code.append(...parts);
       line.append(createXhtmlElement("span", "xv-gutter", String(num)), code);
-      if (owner) lineOwner.set(line, owner);
+      if (owner) {
+        lineOwner.set(line, owner);
+      }
       return line;
     }
 
@@ -218,23 +282,33 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
     function renderNode(n: Node, depth: number, num: number, out: HTMLElement | DocumentFragment): void {
       if (n instanceof CDATASection) {
-        out.append(makeLine(num, depth, [createTokenSpan("tk-cdata", `<![CDATA[${n.data}]]>`)], n)); return;
+        out.append(makeLine(num, depth, [createTokenSpan("tk-cdata", `<![CDATA[${n.data}]]>`)], n));
+        return;
       }
       if (n instanceof Text) {
-        out.append(makeLine(num, depth, [createTokenSpan("tk-text", n.data.trim())], n)); return;
+        out.append(makeLine(num, depth, [createTokenSpan("tk-text", n.data.trim())], n));
+        return;
       }
       if (n instanceof Comment) {
-        out.append(makeLine(num, depth, [createTokenSpan("tk-comment", `<!--${n.data}-->`)], n)); return;
+        out.append(makeLine(num, depth, [createTokenSpan("tk-comment", `<!--${n.data}-->`)], n));
+        return;
       }
       if (n instanceof ProcessingInstruction) {
-        out.append(makeLine(num, depth, [createTokenSpan("tk-pi", `<?${n.target}${n.data ? " " + n.data : ""}?>`)], n)); return;
+        out.append(makeLine(num, depth, [createTokenSpan("tk-pi", `<?${n.target}${n.data ? " " + n.data : ""}?>`)], n));
+        return;
       }
       if (n instanceof DocumentType) {
-        out.append(makeLine(num, depth, [createTokenSpan("tk-doctype", `<!DOCTYPE ${n.name}>`)], n)); return;
+        out.append(makeLine(num, depth, [createTokenSpan("tk-doctype", `<!DOCTYPE ${n.name}>`)], n));
+        return;
       }
-      if (!(n instanceof Element)) return;
+      if (!(n instanceof Element)) {
+        return;
+      }
       const s = shapeOf(n);
-      if (s.kind === "empty") { out.append(makeLine(num, depth, openTag(n, true), n)); return; }
+      if (s.kind === "empty") {
+        out.append(makeLine(num, depth, openTag(n, true), n));
+        return;
+      }
       if (s.kind === "compact") {
         out.append(makeLine(num, depth, [...openTag(n, false), createTokenSpan("tk-text", (s.children[0] as Text).data.trim()), ...closeTag(n)], n));
         return;
@@ -269,23 +343,35 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
     function materialize(box: HTMLElement): void {
       const p = pending.get(box);
-      if (!p) return;
+      if (!p) {
+        return;
+      }
       pending.delete(box);
       renderChildren(p.node, p.depth, p.start, box);
     }
 
     function materializeAll() {
-      while (pending.size) for (const box of Array.from(pending.keys())) materialize(box);
+      while (pending.size) {
+        for (const box of Array.from(pending.keys())) {
+          materialize(box);
+        }
+      }
     }
 
     function setCollapsed(box: HTMLElement, collapsed: boolean): void {
-      if (!collapsed) materialize(box);
+      if (!collapsed) {
+        materialize(box);
+      }
       box.classList.toggle("collapsed", collapsed);
       const open = box.previousElementSibling;
       const toggle = open?.querySelector(".xv-toggle");
       const ellipsis = open?.querySelector<HTMLElement>(".xv-ellipsis");
-      if (toggle) toggle.textContent = collapsed ? "▸" : "▾";
-      if (ellipsis) ellipsis.style.display = collapsed ? "" : "none";
+      if (toggle) {
+        toggle.textContent = collapsed ? "▸" : "▾";
+      }
+      if (ellipsis) {
+        ellipsis.style.display = collapsed ? "" : "none";
+      }
     }
 
     // ---- skeleton
@@ -342,10 +428,14 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     xpathEl.id = "xv-xpath";
     status.append(createXhtmlElement("strong", null, "XPath:"), document.createTextNode(" "), xpathEl);
 
-    if (doc) renderChildren(doc, 0, 1, main);
+    if (doc) {
+      renderChildren(doc, 0, 1, main);
+    }
 
     function ensureRaw() {
-      if (rawBuilt) return;
+      if (rawBuilt) {
+        return;
+      }
       rawBuilt = true;
       const frag = document.createDocumentFragment();
       raw.split(/\r\n|\r|\n/).forEach((text, i) => frag.append(makeLine(i + 1, 0, [document.createTextNode(text)])));
@@ -355,7 +445,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     }
 
     function syncMode() {
-      if (rawMode) ensureRaw();
+      if (rawMode) {
+        ensureRaw();
+      }
       main.style.display = rawMode ? "none" : "";
       rawBox.style.display = rawMode ? "block" : "none";
       rawBtn.textContent = rawMode ? "Tree" : "Raw";
@@ -366,7 +458,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     // ---- selection
 
     function selectLine(line: HTMLElement) {
-      if (selectedLine) selectedLine.classList.remove("selected");
+      if (selectedLine) {
+        selectedLine.classList.remove("selected");
+      }
       selectedLine = line;
       line.classList.add("selected");
       const owner = lineOwner.get(line);
@@ -378,12 +472,18 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
     main.addEventListener("click", (e) => {
       const target = e.target;
-      if (!(target instanceof Element)) return;
+      if (!(target instanceof Element)) {
+        return;
+      }
       const line = target.closest<HTMLElement>(".xv-line");
-      if (!line) return;
+      if (!line) {
+        return;
+      }
       if (target.closest(".xv-toggle, .xv-ellipsis")) {
         const box = line.nextElementSibling;
-        if (box instanceof HTMLElement && box.classList.contains("xv-children")) setCollapsed(box, !box.classList.contains("collapsed"));
+        if (box instanceof HTMLElement && box.classList.contains("xv-children")) {
+          setCollapsed(box, !box.classList.contains("collapsed"));
+        }
         return;
       }
       selectLine(line);
@@ -408,8 +508,12 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
     function wrapText(node: Text, a: number, b: number): HTMLElement {
       let t = node;
-      if (a > 0) t = t.splitText(a);
-      if (b - a < t.data.length) t.splitText(b - a);
+      if (a > 0) {
+        t = t.splitText(a);
+      }
+      if (b - a < t.data.length) {
+        t.splitText(b - a);
+      }
       const m = createXhtmlElement("mark");
       t.parentNode!.replaceChild(m, t);
       m.append(t);
@@ -421,22 +525,32 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       for (const group of matches) {
         for (const m of group) {
           const p = m.parentNode;
-          if (!p) continue;
-          while (m.firstChild) p.insertBefore(m.firstChild, m);
+          if (!p) {
+            continue;
+          }
+          while (m.firstChild) {
+            p.insertBefore(m.firstChild, m);
+          }
           m.remove();
           parents.add(p);
         }
       }
-      for (const p of parents) p.normalize();
+      for (const p of parents) {
+        p.normalize();
+      }
       matches = [];
       matchIdx = -1;
       capped = false;
     }
 
     function updateCount() {
-      if (!search.value.trim()) countEl.textContent = "";
-      else if (!matches.length) countEl.textContent = "no matches";
-      else countEl.textContent = `${matchIdx + 1}/${matches.length}${capped ? "+" : ""}`;
+      if (!search.value.trim()) {
+        countEl.textContent = "";
+      } else if (!matches.length) {
+        countEl.textContent = "no matches";
+      } else {
+        countEl.textContent = `${matchIdx + 1}/${matches.length}${capped ? "+" : ""}`;
+      }
     }
 
     function doSearch() {
@@ -444,17 +558,24 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       const q = search.value.trim();
       if (q) {
         const view = rawMode ? rawBox : main;
-        if (!rawMode) materializeAll();
+        if (!rawMode) {
+          materializeAll();
+        }
         const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu");
         outer:
         for (const code of view.querySelectorAll<HTMLElement>(".xv-code")) {
           const segs = textSegments(code);
-          if (!segs.length) continue;
+          if (!segs.length) {
+            continue;
+          }
           const text = segs.map((s) => s.node.data).join("");
           const found: [number, number][] = [];
           re.lastIndex = 0;
           for (let m = re.exec(text); m; m = re.exec(text)) {
-            if (matches.length + found.length >= MAX_MATCHES) { capped = true; break; }
+            if (matches.length + found.length >= MAX_MATCHES) {
+              capped = true;
+              break;
+            }
             found.push([m.index, m.index + m[0].length]);
           }
           // Wrap back-to-front so earlier offsets stay valid after splitText().
@@ -464,24 +585,37 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
             const group: HTMLElement[] = [];
             for (let j = segs.length - 1; j >= 0; j--) {
               const seg = segs[j];
-              if (seg.end <= s || seg.start >= e) continue;
+              if (seg.end <= s || seg.start >= e) {
+                continue;
+              }
               group.unshift(wrapText(seg.node, Math.max(s, seg.start) - seg.start, Math.min(e, seg.end) - seg.start));
             }
             groups.unshift(group);
           }
           matches.push(...groups);
-          if (capped) break outer;
+          if (capped) {
+            break outer;
+          }
         }
-        if (matches.length) { setCurrent(0); return; }
+        if (matches.length) {
+          setCurrent(0);
+          return;
+        }
       }
       updateCount();
     }
 
     function setCurrent(i: number) {
-      if (matchIdx >= 0) for (const m of matches[matchIdx]) m.classList.remove("current");
+      if (matchIdx >= 0) {
+        for (const m of matches[matchIdx]) {
+          m.classList.remove("current");
+        }
+      }
       matchIdx = i;
       const group = matches[i];
-      for (const m of group) m.classList.add("current");
+      for (const m of group) {
+        m.classList.add("current");
+      }
       for (let box = group[0].closest<HTMLElement>(".xv-children.collapsed"); box; box = box.parentElement?.closest<HTMLElement>(".xv-children.collapsed") ?? null) {
         setCollapsed(box, false);
       }
@@ -490,7 +624,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     }
 
     function stepMatch(d: number) {
-      if (!matches.length) return;
+      if (!matches.length) {
+        return;
+      }
       setCurrent((matchIdx + d + matches.length) % matches.length);
     }
 
@@ -500,9 +636,16 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       searchTimer = setTimeout(() => { searchTimer = 0; doSearch(); }, 200);
     });
     search.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter") return;
+      if (e.key !== "Enter") {
+        return;
+      }
       e.preventDefault();
-      if (searchTimer) { clearTimeout(searchTimer); searchTimer = 0; doSearch(); return; }
+      if (searchTimer) {
+        clearTimeout(searchTimer);
+        searchTimer = 0;
+        doSearch();
+        return;
+      }
       stepMatch(e.shiftKey ? -1 : 1);
     });
     prevBtn.addEventListener("click", () => stepMatch(-1));
@@ -513,39 +656,60 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     expandBtn.addEventListener("click", () => {
       collapseDepth = Infinity;
       materializeAll();
-      for (const box of main.querySelectorAll<HTMLElement>(".xv-children")) setCollapsed(box, false);
+      for (const box of main.querySelectorAll<HTMLElement>(".xv-children")) {
+        setCollapsed(box, false);
+      }
     });
     collapseBtn.addEventListener("click", () => {
       collapseDepth = 0;
-      for (const box of main.querySelectorAll<HTMLElement>(".xv-children")) setCollapsed(box, true);
+      for (const box of main.querySelectorAll<HTMLElement>(".xv-children")) {
+        setCollapsed(box, true);
+      }
     });
     rawBtn.addEventListener("click", () => {
       rawMode = !rawMode;
       syncMode();
-      if (search.value.trim()) doSearch();
+      if (search.value.trim()) {
+        doSearch();
+      }
     });
     copyBtn.addEventListener("click", () => {
-      if (!selectedXPath) return;
+      if (!selectedXPath) {
+        return;
+      }
       navigator.clipboard.writeText(selectedXPath).then(() => {
         copyBtn.textContent = "Copied";
         setTimeout(() => { copyBtn.textContent = "Copy XPath"; }, 1200);
-      }, (err) => console.warn("[XML Viewer] clipboard write failed:", err));
+      }, (err) => {
+        console.warn("[XML Viewer] clipboard write failed:", err);
+      });
     });
 
     function applyTheme(t: unknown) {
       theme = typeof t === "string" && THEMES.includes(t as Theme) ? t as Theme : "system";
-      if (theme === "system") document.documentElement.removeAttribute("data-theme");
-      else document.documentElement.setAttribute("data-theme", theme);
+      if (theme === "system") {
+        document.documentElement.removeAttribute("data-theme");
+      } else {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
       themeBtn.textContent = `Theme: ${THEME_LABELS[theme]}`;
       themeBtn.title = theme === "system" ? "Theme: follow system (click to change)" : `Theme: forced ${theme} (click to change)`;
     }
     const storage = typeof chrome !== "undefined" && chrome.storage && chrome.storage.local;
     themeBtn.addEventListener("click", () => {
       applyTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]);
-      if (!storage) return;
+      if (!storage) {
+        return;
+      }
       try {
-        storage.set({ [THEME_KEY]: theme }, () => { if (chrome.runtime.lastError) console.warn("[XML Viewer] theme not saved:", chrome.runtime.lastError.message); });
-      } catch (err) { console.warn("[XML Viewer] theme not saved:", err); }
+        storage.set({ [THEME_KEY]: theme }, () => {
+          if (chrome.runtime.lastError) {
+            console.warn("[XML Viewer] theme not saved:", chrome.runtime.lastError.message);
+          }
+        });
+      } catch (err) {
+        console.warn("[XML Viewer] theme not saved:", err);
+      }
     });
 
     syncMode();
@@ -553,10 +717,18 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
     // Called only after the viewer has been mounted (the root element may have been replaced).
     function afterMount() {
       applyTheme("system");
-      if (!storage) return;
+      if (!storage) {
+        return;
+      }
       try {
-        storage.get(THEME_KEY, (r) => { if (!chrome.runtime.lastError && r) applyTheme(r[THEME_KEY]); });
-      } catch { /* extension context invalidated */ }
+        storage.get(THEME_KEY, (r) => {
+          if (!chrome.runtime.lastError && r) {
+            applyTheme(r[THEME_KEY]);
+          }
+        });
+      } catch {
+        /* extension context invalidated */
+      }
     }
 
     return { bodyNodes: [header, banner, errorBox, main, rawBox, status], afterMount };
@@ -577,7 +749,9 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
     const head = document.head, body = document.body;
     if (head && body) {
-      for (const a of Array.from(body.attributes)) body.removeAttribute(a.name);
+      for (const a of Array.from(body.attributes)) {
+        body.removeAttribute(a.name);
+      }
       head.replaceChildren(...headNodes);
       body.replaceChildren(...bodyNodes);
     } else {
@@ -586,7 +760,11 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
       newHead.append(...headNodes);
       newBody.append(...bodyNodes);
       html.append(newHead, newBody);
-      for (const n of Array.from(document.childNodes)) if (n !== document.documentElement) n.remove();
+      for (const n of Array.from(document.childNodes)) {
+        if (n !== document.documentElement) {
+          n.remove();
+        }
+      }
       document.replaceChild(html, document.documentElement);
     }
     document.title = `${name} — XML Viewer`;
@@ -594,17 +772,29 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
 
   function boot() {
     const kind = candidateKind();
-    if (!kind) return;
+    if (!kind) {
+      return;
+    }
     const de = document.documentElement;
     const isHtmlDoc = !!de && de.namespaceURI === XHTML_NS && de.localName === "html";
-    if (isHtmlDoc && !isNativeXmlViewer() && !bodyLooksLikeXml()) return; // real HTML (e.g. XSLT output)
-    if (hasStylesheetPI(document)) return; // respect the document's own stylesheet
+    if (isHtmlDoc && !isNativeXmlViewer() && !bodyLooksLikeXml()) {
+      return; // real HTML (e.g. XSLT output)
+    }
+    if (hasStylesheetPI(document)) {
+      return; // respect the document's own stylesheet
+    }
 
     const { raw, error: nativeError } = readLoadedXmlSource();
-    if (raw == null || !raw.trim()) return;
+    if (raw == null || !raw.trim()) {
+      return;
+    }
     const parsed = nativeError ? { doc: null, error: nativeError } : parseXml(raw);
-    if (kind === "sniffed" && parsed.error) return;
-    if (parsed.doc && hasStylesheetPI(parsed.doc)) return;
+    if (kind === "sniffed" && parsed.error) {
+      return;
+    }
+    if (parsed.doc && hasStylesheetPI(parsed.doc)) {
+      return;
+    }
 
     // Build everything detached first, so a failure leaves the page untouched.
     const viewer = buildViewer({ raw, doc: parsed.doc, error: parsed.error });
@@ -613,9 +803,16 @@ import { formatByteSize, hasXmlExtension } from "./xml-utils";
   }
 
   function start() {
-    try { boot(); } catch (err) { console.warn("[XML Viewer] not rendered:", err); }
+    try {
+      boot();
+    } catch (err) {
+      console.warn("[XML Viewer] not rendered:", err);
+    }
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
-  else start();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
 })();
