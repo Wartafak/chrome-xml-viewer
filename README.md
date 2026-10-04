@@ -1,6 +1,22 @@
 # Chrome XML Viewer
 
-Manifest V3 extension for Chrome 88+ and compatible Chromium-based browsers that support Manifest V3. It auto-formats XML with syntax highlighting, collapsible elements, line numbers, search, and XPath. Browser-specific XML handling may vary. The viewer works offline, follows the browser's light/dark color preference with a manual System/Light/Dark toggle, and respects XSLT.
+A Manifest V3 extension that replaces the browser's plain-XML page with a formatted, searchable tree. Runs offline in Chrome 88+ and other Chromium-based browsers; browser-specific XML handling may vary.
+
+![Viewer showing a FHIR CapabilityStatement with syntax highlighting, line numbers, collapsible elements and the search/toolbar](docs/screenshot.png)
+
+## Features
+
+- Syntax-highlighted, pretty-printed tree with line numbers, indentation guides, and text nodes
+- Collapsible elements — click a row to fold/unfold a subtree; **Expand all** / **Collapse all** buttons
+- Search with match highlighting and previous/next navigation, plus a match counter
+- Click any node to see its XPath in the status bar, with **Copy XPath** to the clipboard
+- **Raw** toggle to switch between the formatted tree and the original XML source
+- Node count, file size, and auto-collapse notice for large documents (>1.5MB)
+- Invalid-XML handling: error banner with the browser's parse message and a raw view of the recovered content
+- Light/dark themes following the browser's `prefers-color-scheme`, with a System/Light/Dark toggle persisted in `chrome.storage`
+- Honours `<?xml-stylesheet?>` — XSLT-rendered documents are left untouched
+- Works fully offline; no network requests and no data leaves the browser
+- Handles XML served as `text/plain` (wrapped in `<body><pre>`) without re-fetching the URL
 
 ## Install in Chrome or another Chromium-based browser
 
